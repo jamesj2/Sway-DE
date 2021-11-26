@@ -14,7 +14,7 @@
 
   tasks:
     - name: Common | Including hardware type task
-      include: playbooks/hw-{{ TYPE }}.yml
+      include_tasks: "playbooks/hw-{{ TYPE }}.yml"
 
     - name: Common | Creating directories...
       file:
@@ -27,22 +27,12 @@
         - "{{ BIN_DIR }}"
         - "{{ ansible_user_dir }}/.config/Code - OSS"
 
-    - name: Arch !Manjaro tasks
-      block:
-        - name: Arch !Manjaro | Installing software from aur
-          aur:
-            name:
-              - pamac-aur
-            state: latest
-      when: ansible_lsb.description != "Manjaro Linux" and ansible_distribution == 'Archlinux'
-
     - name: Arch Tasks
       block:
         - name: Arch | Installing software from aur
-          aur:
+          yay:
             name:
               - networkmanager-l2tp
-              - wps-office
             state: latest
 
         - name: Arch | Installing software
@@ -109,7 +99,7 @@
               - sysprof
               - tali
               - gnome-todo
-              - xterm
+#              - xterm
               - totem
               - gnome-devel-docs
               - gnome-getting-started-docs

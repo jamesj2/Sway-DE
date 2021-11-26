@@ -1,0 +1,18 @@
+profile triple {
+        output DP-3 mode 3840x2160 scale 2 position 0,0
+        output DP-4 mode 3440x1440@100Hz position 1920,0
+        output eDP-1 mode 3840x2160 scale 2 position 5360,0
+}
+
+profile dual {
+	output DP-3 mode 3840x2160 scale 2 position 0,0
+	output DP-4 mode 3440x1440@100Hz position 1920,0
+}
+
+profile 4k {
+	output DP-3 mode 3840x2160 scale 2 position 0,0
+}
+
+profile wide {
+	output DP-4 mode 3440x1440@100Hz position 0,0
+}

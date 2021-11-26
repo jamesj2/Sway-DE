@@ -1,0 +1,5 @@
+if [[ -z $DISPLAY ]] && [[ $(tty) = /dev/tty1 ]]; then
+    if [ -f "$FILE" ]; then mv $HOME/sway.log $HOME/sway-prev.log; fi
+    #exec sway -d 2> $HOME/sway.log
+    exec /usr/local/sbin/sway -d 2> $HOME/sway.log
+fi

@@ -10,12 +10,12 @@
         update_cache: true
       become: true
 
-    - name: Arch | Installing required software from aur
-      aur:
-        name:
-          - tuned
-          - auto-cpufreq
-        state: latest
+#    - name: Arch | Installing required software from aur
+#      aur:
+#        name:
+#          - tuned
+#          - auto-cpufreq
+#        state: latest
   when: ansible_distribution == 'Archlinux'
 
 - name: Common | Enabling systemd units

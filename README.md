@@ -169,7 +169,7 @@ This role installs multiple applications from arch repository and aur.
 | pcmanfm-gtk3                                          |                                                     |
 | perl-image-exiftool                                   |                                                     |
 | playerctl                                             |                                                     |
-| polkit-gnome                                          |                                                     |
+| xfcs-polkit                                           |                                                     |
 | qt5-wayland                                           |                                                     |
 | rsync                                                 |                                                     |
 | slurp                                                 |                                                     |

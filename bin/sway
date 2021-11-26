@@ -4,4 +4,6 @@ set -a
 [ -f "$HOME/.config/sway/env" ] && . "$HOME/.config/sway/env"
 [ -f "$HOME/.profile" ] && . "$HOME/.profile"
 set +a
-exec /usr/bin/sway
+exec sway --unsupported-gpu -d
+#exec dbus-run-session sway --unsupported-gpu -d
+#exec /usr/bin/sway

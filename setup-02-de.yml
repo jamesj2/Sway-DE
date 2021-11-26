@@ -6,7 +6,7 @@
 
   vars:
     SWAY_DIR: "{{ ansible_user_dir }}/.config/sway"
-    SWAY_ZSH: false
+    SWAY_ZSH: true
     BIN_DIR: "{{ ansible_user_dir }}/.local/bin"
     ROOT_BIN_DIR: "/root/.local/bin"
     SYSTEMD_UDIR: "{{ ansible_user_dir }}/.config/systemd/user"
@@ -15,11 +15,11 @@
       - { section: cmd_duration, option: disabled, value: "true" }
       - { section: line_break, option: disabled, value: "true" }
     HOWTO: |
-      After a reboot you can start Sway by entering "sway" on the console or let it automatically start after login via the following entry at the beginning of your ~/.bashrc:
+      After a reboot you can start Sway by entering "/usr/local/bin/sway" on the console or let it automatically start after login via the following entry at the beginning of your ~/.bashrc:
       if [[ -z $DISPLAY ]] && [[ $(tty) = /dev/tty1 ]]; then
         if [ -f "$FILE" ]; then mv $HOME/sway.log $HOME/sway-prev.log; fi
-        #exec sway -d 2> $HOME/sway.log
-        exec sway
+        #exec /usr/local/sbin/sway -d 2> $HOME/sway.log
+        exec /usr/local/sbin/sway
       fi
       Also don't forget to set environment variables. Take a look at the README.md file.
 
@@ -40,7 +40,8 @@
     - name: Arch | Root Tasks
       block:
         - name: Arch | Installing required software
-          pacman:
+          become: yes
+          yay:
             name:
               - alacritty
               - antiword
@@ -71,6 +72,7 @@
               - pkgfile
               - playerctl
               - polkit-gnome
+              - xfce-polkit
               - python-pywal
               - qt5-wayland
               - rsync
@@ -86,28 +88,9 @@
             state: latest
             update_cache: true
 
-        - name: Arch | Making sure file ~/.gnupg/gpg.conf exists for user aur_builder
-          copy:
-            content: ""
-            dest: "~/.gnupg/gpg.conf"
-            force: false
-            group: aur_builder
-            owner: aur_builder
-            mode: 0640
-          become_user: aur_builder
-
-        - name: Arch | Adding gpg keyserver for user aur_builder
-          lineinfile:
-            path: "~/.gnupg/gpg.conf"
-            regexp: "^keyserver hkp.*"
-            line: keyserver pool.sks-keyservers.net
-            owner: aur_builder
-            group: aur_builder
-            mode: 0640
-          become_user: aur_builder
 
         - name: Arch | Installing required software from aur
-          aur:
+          yay:
             name:
               - archivemount
               - autotiling
@@ -118,8 +101,8 @@
               - edir
               - glow-bin
               - j4-dmenu-desktop
-              - lf
-              - nerd-fonts-dejavu-complete
+              - lf-bin
+              - nerd-fonts-complete
               #- otf-font-awesome-4
               - remontoire-git
               - swappy
@@ -130,11 +113,6 @@
               - wshowkeys-git
               - xdg-desktop-portal-wlr
             state: latest
-            use: yay
-            extra_args: --pgpfetch
-          become_user: aur_builder
-          vars:
-            mitogen_task_isolation: fork
       when: ansible_distribution == 'Archlinux'
       become: true
 
@@ -161,8 +139,8 @@
         - "{{ ansible_user_dir }}/.config/wget"
         - "{{ ansible_user_dir }}/.config/zsh"
         - "{{ ansible_user_dir }}/.config/xdg-desktpo-portal-wlr"
-        - "{{ ansible_user_dir }}/.local/share/themes/Windows-10"
-        - "{{ ansible_user_dir }}/.local/share/icons/Windows-10"
+        #- "{{ ansible_user_dir }}/.local/share/themes/Windows-10"
+        #- "{{ ansible_user_dir }}/.local/share/icons/Windows-10"
         - "{{ USER_PICTURE_DIR }}/screenshots"
 
     - name: Common | Ensure wgetrc exists
@@ -194,15 +172,20 @@
             dest: "{{ SWAY_DIR }}/sway.d",
             mode: "0750",
           }
-        - {
-            src: "{{ ansible_user_dir }}/.cache/wal/colors-mako",
-            dest: "{{ ansible_user_dir }}/.config/mako/config",
-            mode: "0640",
-          }
+#        - {
+#            src: "{{ ansible_user_dir }}/config/mako/mako.conf",
+#            dest: "{{ ansible_user_dir }}/.config/mako/config",
+#            mode: "0640",
+#          }
         - {
             src: "{{ playbook_dir }}/config/waybar",
             dest: "{{ ansible_user_dir }}/.config/waybar",
             mode: "0750",
+          }
+        - {
+            src: "{{ playbook_dir }}/config/kanshi/config",
+            dest: "{{ ansible_user_dir }}/.config/kanshi/config",
+            mode: "0640",
           }
         - {
             src: "{{ playbook_dir }}/config/kanshi/config.example",
@@ -234,6 +217,11 @@
             dest: "{{ ansible_user_dir }}/.config/xdg-desktpo-portal-wlr/config",
             mode: "0640",
           }
+        - {
+            src: "{{ playbook_dir }}/hosts/{{ ansible_hostname }}/host.conf",
+            dest: "{{ SWAY_DIR }}/{{ ansible_hostname }}/host.conf",
+            mode: "0640",
+          }
 
     - name: Common | Creating shell script symlinks...
       file:
@@ -248,7 +236,7 @@
         - "{{ playbook_dir }}/bin/emoji"
         - "{{ playbook_dir }}/bin/steam"
 
-    - name: Common | Templating custom bashrc...
+    - name: Common | Templating custom bashrc & zshrc...
       template:
         owner: "{{ ansible_user_id }}"
         group: "{{ ansible_user_id }}"
@@ -264,6 +252,30 @@
             src: "{{ playbook_dir }}/config/bash/bashrc.j2",
             dest: "{{ BIN_DIR }}/zsh/sway-de.sh",
           }
+        - {
+            src: "{{ playbook_dir }}/config/bash/nvm.j2",
+            dest: "{{ BIN_DIR }}/bash/nvm.sh",
+          }
+        - {
+            src: "{{ playbook_dir }}/config/bash/nvm.j2",
+            dest: "{{ BIN_DIR }}/zsh/nvm.sh",
+          }
+        - {
+            src: "{{ playbook_dir }}/config/bash/keychain.j2",
+            dest: "{{ BIN_DIR }}/bash/keychain.sh",
+          }
+        - {
+            src: "{{ playbook_dir }}/config/bash/keychain.j2",
+            dest: "{{ BIN_DIR }}/zsh/keychain.sh",
+          }
+#        - {
+#            src: "{{ playbook_dir }}/config/bash/sway-start.j2",
+#            dest: "{{ BIN_DIR }}/bash/sway-start.sh",
+#          }
+#        - {
+#            src: "{{ playbook_dir }}/config/bash/sway-start.j2",
+#            dest: "{{ BIN_DIR }}/zsh/sway-start.sh",
+#          }
 
     - name: Common | Checking existence of alacritty.yml
       stat:
@@ -326,21 +338,44 @@
       command: wal --theme base16-dracula -o wal.sh
       when: not mako_pywal_config.stat.exists
 
-    - name: Common | Cloning Windows-10 themes and icons...
-      git:
-        repo: "{{ item.src }}"
-        dest: "{{ item.dest }}"
-        update: true
-      with_items:
-        - {
-            src: "https://github.com/B00merang-Project/Windows-10.git",
-            dest: "{{ ansible_user_dir }}/.local/share/themes/Windows-10",
-          }
-        - {
-            src: "https://github.com/B00merang-Artwork/Windows-10.git",
-            dest: "{{ ansible_user_dir }}/.local/share/icons/Windows-10",
-          }
-      diff: false
+    - name: Download Fluent theme
+      ansible.builtin.unarchive:
+          src: https://codeload.github.com/vinceliuice/Fluent-gtk-theme/tar.gz/refs/tags/2021-11-23
+          dest: /tmp
+          remote_src: yes
+
+    - name: Extract Fluent theme
+      ansible.builtin.unarchive:
+        src: /tmp/Fluent-gtk-theme-2021-11-23/release/Fluent.tar.xz
+        dest: "{{ ansible_user_dir }}/.local/share/themes"
+
+    - name: Download Fluent icons
+      ansible.builtin.unarchive:
+        src: https://codeload.github.com/vinceliuice/Fluent-icon-theme/tar.gz/refs/tags/2021-10-07
+        dest: /tmp
+        remote_src: yes
+
+    - name: Download Fluent icons
+      ansible.builtin.unarchive:
+        src: /tmp/Fluent-icon-theme-2021-10-07/release/Fluent.tar.xz
+        dest: "{{ ansible_user_dir }}/.local/share/icons"
+        remote_src: yes
+
+    #    - name: Common | Cloning Windows-10 themes and icons...
+#      git:
+#        repo: "{{ item.src }}"
+#        dest: "{{ item.dest }}"
+#        update: true
+#      with_items:
+#        - {
+#            src: "https://github.com/vinceliuice/Fluent-gtk-theme.git",
+#            dest: "{{ ansible_user_dir }}/.local/share/themes/Windows-10",
+#          }
+#        - {
+#            src: "https://github.com/B00merang-Artwork/Windows-10.git",
+#            dest: "{{ ansible_user_dir }}/.local/share/icons/Windows-10",
+#          }
+#      diff: false
 
     - name: Common | Extending user .bashrc...
       blockinfile:
@@ -413,8 +448,8 @@
         no_extra_spaces: true
         mode: 0640
       with_items:
-        - { option: "gtk-theme-name", value: "Windows-10" }
-        - { option: "gtk-icon-theme-name", value: "Windows-10" }
+        - { option: "gtk-theme-name", value: "Fluent" }
+        - { option: "gtk-icon-theme-name", value: "Fluent" }
 
     - name: Common | Configuring {{ ansible_user_dir }}/.config/gtk-2.0/gtkrc-2.0
       ini_file:
@@ -426,8 +461,8 @@
         group: "{{ ansible_user_id }}"
         mode: 0640
       with_items:
-        - { option: "gtk-theme-name", value: '"Windows-10"' }
-        - { option: "gtk-icon-theme-name", value: '"Windows-10"' }
+        - { option: "gtk-theme-name", value: '"Fluent"' }
+        - { option: "gtk-icon-theme-name", value: '"Fluent"' }
 
     # {{ ansible_user_dir }}/.pam_environment is the most compatible way
     # to set enviromment variables. --> Deprecated as of
@@ -439,7 +474,7 @@
         block: |
           # Reduces crashs for some gdk apps, like evolution
           # ! Do not set as global variable. Electron Apps will not start !
-          # export GDK_BACKEND=wayland
+          # export GDK_BACKEND=wayland # (commented out because it breaks thunderbird & chromium)
 
           # Required for tray icons on waybar
           export XDG_CURRENT_DESKTOP=sway
@@ -448,7 +483,7 @@
           export QT_QPA_PLATFORMTHEME=qt5ct
 
           # Force wayland on qt apps
-          export QT_QPA_PLATFORM=wayland-egl
+          #export QT_QPA_PLATFORM=wayland-egl
           export QT_WAYLAND_DISABLE_WINDOWDECORATION=1
           # Explicitly set to '96' instead of 'physical' because some apps have problems
           # Looking at you nextcloud client!
@@ -456,12 +491,18 @@
           # https://github.com/swaywm/sway/issues/2424
           export QT_WAYLAND_FORCE_DPI=96
 
+          # use native dialog
+          export GTK_USE_PORTAL=0
+          
           # Make Qt apps honour DPI settings.
           export QT_AUTO_SCREEN_SCALE_FACTOR=1
 
           # Mozilla Wayland support + hardware video decoding
           export MOZ_ENABLE_WAYLAND=1
           export MOZ_WAYLAND_USE_VAAPI=1
+
+          # Force gstreamer to use vaapi
+          export GST_VAAPI_ALL_DRIVERS=1
 
           # SDL
           export SDL_VIDEODRIVER=wayland
@@ -474,6 +515,20 @@
 
           # Session Type for later screensharing
           export XDG_SESSION_TYPE=wayland
+
+          # Run OBS in wayland
+          export OBS_USE_EGL=1
+          
+          # specify which gpu to use
+          export WLR_DRM_DEVICES=/dev/dri/card0
+          #export WLR_DRM_DEVICES=/dev/dri/card0:/dev/dri/card1:/dev/dri/card2
+
+          # Work around https://github.com/swaywm/wlroots/issues/1877
+          #export WLR_DRM_NO_MODIFIERS=1
+
+          #export GBM_BACKEND=nvidia-drm
+          #export __GLX_VENDOR_LIBRARY_NAME=nvidia
+          #export WLR_NO_HARDWARE_CURSORS=1
         marker: "
           # {mark} Sway desktop environment config"
         insertafter: EOF
@@ -509,7 +564,7 @@
           DOCKER_CONFIG=${XDG_CONFIG_HOME}/docker/
           KUBECONFIG=${XDG_CONFIG_HOME}/kube/config
           KIMAI_CONFIG=${XDG_CONFIG_HOME}/kimai2/settings.ini
-          ZDOTDIR=${XDG_CONFIG_HOME}/zsh
+          #ZDOTDIR=${XDG_CONFIG_HOME}/zsh
 
           # Include {{ BIN_DIR }}/sway and ${GOPATH}/bin in $PATH
           PATH={{ BIN_DIR }}/sway:${GOPATH}/bin:${PATH}

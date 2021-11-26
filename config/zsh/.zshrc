@@ -8,11 +8,13 @@
 ### * pkgfile
 
 ## Installing package manager
-if [[ ! -d $HOME/.config/zsh/zinit ]];then
-  mkdir $HOME/.config/zsh/zinit
-  git clone https://github.com/zdharma/zinit.git $HOME/.config/zsh/zinit
+ZINIT_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}/zinit/zinit.git"
+if [[ ! -d "$ZINIT_HOME" ]];then
+echo $ZINIT_HOME
+  mkdir -p "$(dirname $ZINIT_HOME)"
+  git clone https://github.com/zdharma-continuum/zinit.git "$ZINIT_HOME"
 fi
-source $HOME/.config/zsh/zinit/zinit.zsh
+source "${ZINIT_HOME}/zinit.zsh"
 
 export DIRENV_LOG_FORMAT=
 HISTFILE=$HOME/.bash_history
@@ -106,7 +108,7 @@ fi
 
 zinit wait lucid light-mode for \
   atinit"zicompinit; zicdreplay" \
-      zdharma/fast-syntax-highlighting \
+      zdharma-continuum/fast-syntax-highlighting \
   atload"_zsh_autosuggest_start" \
       zsh-users/zsh-autosuggestions \
   blockf atpull'zinit creinstall -q .' \
@@ -126,7 +128,7 @@ zinit from"gh-r" as"program" mv"direnv* -> direnv" \
 # Multi-word, syntax highlighted history searching for Zsh
 zstyle ":history-search-multi-word" page-size "11"
 zinit ice wait"1" lucid
-zinit light zdharma/history-search-multi-word
+zinit light robobenklein/zdharma-history-search-multi-word
 
 zinit light skywind3000/z.lua # navigate faster by learning your habits
 zinit snippet OMZP::command-not-found # provide suggested packages to be installed if a command cannot be found
