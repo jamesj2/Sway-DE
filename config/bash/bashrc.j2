@@ -25,6 +25,13 @@ lfcd() {
 
 export LESS=-R
 export PAGER="less -R"
+export EDITOR="code --enable-features=UseOzonePlatform --ozone-platform=wayland -w"
+export GIT_EDITOR=$EDITOR
+export SVN_EDITOR=$EDITOR
+export CLICOLOR=1
+export GREP_COLOR=auto
+export LSCOLORS=Exgxcxdxbxegedabagacad
+export WORDCHARS='*?[]~&;!$%^<>'
 
 alias nano='nano -c'
 alias en='sudo -i'
@@ -105,3 +112,18 @@ ex=🎯:\
 *.part=💔:\
 *.torrent=🔽:\
 "
+
+## gnome keyring
+if [[ -n "$DESKTOP_SESSION" && -f "/bin/gnome-keyring-daemon" ]];then
+    eval $(/bin/gnome-keyring-daemon --start)
+    export SSH_AUTH_SOCK
+    export GPG_AGENT_INFO
+    export GNOME_KEYRING_CONTROL
+    export GNOME_KEYRING_PID
+fi
+
+## keychain
+if [[ -f "/usr/bin/keychain" ]]; then
+    eval $(/usr/bin/keychain --eval --ignore-missing --agents ssh --systemd id_ed25519 id_rsa id_proxmox_cbiz id_ed25519_webdev_production)
+    #/usr/bin/keychain --ignore-missing --agents ssh --systemd id_ed25519 id_rsa id_proxmox_cbiz id_ed25519_webdev_production
+fi

@@ -1,1 +1,3 @@
-eval $(keychain --eval --quiet id_ed25519 id_rsa id_proxmox_cbiz id_ed25519_webdev_production)
+if [[ ! -z $DISPLAY ]]; then
+    eval $(keychain --eval --quiet id_ed25519 id_rsa id_proxmox_cbiz id_ed25519_webdev_production)
+fi

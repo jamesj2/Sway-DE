@@ -1,0 +1,12 @@
+[Unit]
+Description=keychain
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/keychain --ignore-missing --gpg2 --agents ssh,gpg --systemd id_ed25519 id_rsa id_proxmox_cbiz id_ed25519_webdev_production
+RemainAfterExit=true
+ExecStop=/usr/bin/keychain --stop all
+StandardOutput=journal
+
+[Install]
+WantedBy=default.target

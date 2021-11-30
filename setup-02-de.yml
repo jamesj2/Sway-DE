@@ -24,6 +24,14 @@
       Also don't forget to set environment variables. Take a look at the README.md file.
 
   tasks:
+    - name: Add ssh agent line to sudoers (needed for yay)
+      lineinfile:
+        dest: /etc/sudoers
+        state: present
+        regexp: SSH_AUTH_SOCK
+        line: Defaults env_keep += "SSH_AUTH_SOCK"
+      become: true
+
     - name: Common | Getting Pictures directory
       shell: xdg-user-dir PICTURES
       register: XDG_OUTPUT
@@ -48,6 +56,7 @@
               - bemenu
               - bemenu-wayland
               - blueman
+              - code
               - cdrtools
               - docx2txt
               - ffmpeg
@@ -114,7 +123,7 @@
               - xdg-desktop-portal-wlr
             state: latest
       when: ansible_distribution == 'Archlinux'
-      become: true
+      #become: true
 
     - name: Common | Creating directories...
       file:
@@ -252,30 +261,30 @@
             src: "{{ playbook_dir }}/config/bash/bashrc.j2",
             dest: "{{ BIN_DIR }}/zsh/sway-de.sh",
           }
-        - {
-            src: "{{ playbook_dir }}/config/bash/nvm.j2",
-            dest: "{{ BIN_DIR }}/bash/nvm.sh",
-          }
-        - {
-            src: "{{ playbook_dir }}/config/bash/nvm.j2",
-            dest: "{{ BIN_DIR }}/zsh/nvm.sh",
-          }
-        - {
-            src: "{{ playbook_dir }}/config/bash/keychain.j2",
-            dest: "{{ BIN_DIR }}/bash/keychain.sh",
-          }
-        - {
-            src: "{{ playbook_dir }}/config/bash/keychain.j2",
-            dest: "{{ BIN_DIR }}/zsh/keychain.sh",
-          }
 #        - {
-#            src: "{{ playbook_dir }}/config/bash/sway-start.j2",
-#            dest: "{{ BIN_DIR }}/bash/sway-start.sh",
+#            src: "{{ playbook_dir }}/config/bash/keychain.j2",
+#            dest: "{{ BIN_DIR }}/bash/keychain.sh",
 #          }
 #        - {
-#            src: "{{ playbook_dir }}/config/bash/sway-start.j2",
-#            dest: "{{ BIN_DIR }}/zsh/sway-start.sh",
+#            src: "{{ playbook_dir }}/config/bash/keychain.j2",
+#            dest: "{{ BIN_DIR }}/zsh/keychain.sh",
 #          }
+        - {
+            src: "{{ playbook_dir }}/config/bash/nvm.j2",
+            dest: "{{ BIN_DIR }}/bash/nvm.zsh",
+          }
+        - {
+            src: "{{ playbook_dir }}/config/zsh/nvm.j2",
+            dest: "{{ BIN_DIR }}/zsh/nvm.zsh",
+          }
+        - {
+            src: "{{ playbook_dir }}/config/bash/sway-start.j2",
+            dest: "{{ BIN_DIR }}/zsh/sway-start.sh",
+          }
+        - {
+            src: "{{ playbook_dir }}/config/bash/sway-start.j2",
+            dest: "{{ BIN_DIR }}/bash/sway-start.sh",
+          }
 
     - name: Common | Checking existence of alacritty.yml
       stat:
@@ -295,6 +304,25 @@
             dest: "{{ ansible_user_dir }}/.config/alacritty/alacritty.yml",
           }
       when: not alacritty_config.stat.exists
+
+    - name: Common | Checking existence of electron-flags.conf
+      stat:
+        path: "{{ ansible_user_dir }}/.config/electron/electron-flags.conf"
+      register: electron_config
+
+    - name: Common | Templating electron config file...
+      template:
+        src: "{{ item.src }}"
+        dest: "{{ item.dest }}"
+        owner: "{{ ansible_user_id }}"
+        group: "{{ ansible_user_id }}"
+        mode: 0640
+      with_items:
+        - {
+            src: "{{ playbook_dir }}/config/electron/electron-flags.j2",
+            dest: "{{ ansible_user_dir }}/.config/electron-flags.conf",
+          }
+      when: not electron_config.stat.exists
 
     - name: Common | Templating systemd user units...
       template:
